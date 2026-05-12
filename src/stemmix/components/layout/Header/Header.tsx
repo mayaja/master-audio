@@ -55,6 +55,7 @@ type SeparationWorkerMessage = {
     progress?: number
     status?: string
     message?: string
+    error?: string
 }
 
 /**
@@ -620,7 +621,7 @@ export default function Header() {
         separatorWorker.onmessage = async (
             event: MessageEvent<SeparationWorkerMessage>,
         ) => {
-            const { type, stems, progress, status, message } =
+            const { type, stems, progress, status, message, error } =
                 event.data
 
             // Tangani update progress dari worker
@@ -646,6 +647,8 @@ export default function Header() {
             if (
                 type === 'SEPARATION_SUCCESS'
             ) {
+                console.info('[StemMix UI] Separation success received from worker')
+
                 if (!audioBuffer) return
 
                 // Mapping stems secara dinamis untuk menghindari kesalahan penulisan key
@@ -697,6 +700,11 @@ export default function Header() {
             if (
                 type === 'SEPARATION_ERROR'
             ) {
+                console.error(
+                    '[StemMix UI] Separation error received from worker',
+                    error ?? message,
+                )
+
                 setSeparating(false)
             }
         }

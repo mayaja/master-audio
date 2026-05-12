@@ -14,6 +14,21 @@ ort.env.wasm.numThreads =
         )
         : 1
 
+console.info('[StemMix Worker] Runtime environment', {
+    crossOriginIsolated,
+    hardwareConcurrency:
+        navigator.hardwareConcurrency,
+    wasmThreads:
+        ort.env.wasm.numThreads,
+    hasWebGPU:
+        typeof navigator !== 'undefined' &&
+        Boolean(navigator.gpu),
+    wasmPath:
+        ortWasmJsepUrl,
+    modelPath:
+        '/models/htdemucs_embedded.onnx',
+})
+
 type DemucsProgress = {
     progress: number
     currentSegment: number
@@ -25,13 +40,6 @@ type SeparateMessage = {
     leftChannel: Float32Array<ArrayBuffer>
     rightChannel: Float32Array<ArrayBuffer>
 }
-
-const DEFAULT_LOCAL_MODEL_PATH = '/models/htdemucs_embedded.onnx'
-const MODEL_PATH =
-    import.meta.env.VITE_DEMUCS_MODEL_URL?.trim() ||
-    DEFAULT_LOCAL_MODEL_PATH
-const MIN_MODEL_BYTES = 100_000_000
-const MODEL_LOAD_TIMEOUT_MS = 180_000
 
 function clampProgress(value: number) {
     return Math.min(
@@ -78,124 +86,25 @@ function postProgress(
     })
 }
 
-async function ensureModelAvailable() {
-    const headResponse = await fetch(
-        MODEL_PATH,
-        {
-            method: 'HEAD',
-            cache: 'no-store',
-        },
-    ).catch(() => null)
-
-    if (headResponse?.ok) {
-        const contentLength =
-            Number(
-                headResponse.headers.get('content-length') ?? 0,
-            )
-
-        if (
-            contentLength > 0 &&
-            contentLength < MIN_MODEL_BYTES
-        ) {
-            throw new Error(
-                `Demucs model at ${MODEL_PATH} looks incomplete (${contentLength} bytes). Re-upload or re-download the model asset.`,
-            )
-        }
-
-        return
-    }
-
-    const rangeResponse = await fetch(
-        MODEL_PATH,
-        {
-            method: 'GET',
-            cache: 'no-store',
-            headers: {
-                Range: 'bytes=0-1023',
-            },
-        },
-    ).catch(() => null)
-
-    await rangeResponse?.body?.cancel()
-
-    if (!rangeResponse?.ok) {
-        const status =
-            headResponse?.status ??
-            rangeResponse?.status ??
-            'network error'
-
-        throw new Error(
-            `Demucs model is not available at ${MODEL_PATH}. Server returned ${status}. Make sure the model URL is reachable and supports browser requests.`,
-        )
-    }
-}
-
-async function withTimeout<T>(
-    task: Promise<T>,
-    timeoutMs: number,
-    timeoutMessage: string,
-) {
-    let timeoutId: ReturnType<typeof setTimeout> | undefined
-
-    const timeout =
-        new Promise<never>((_, reject) => {
-            timeoutId = setTimeout(
-                () => {
-                    reject(
-                        new Error(timeoutMessage),
-                    )
-                },
-                timeoutMs,
-            )
-        })
-
-    try {
-        return await Promise.race([
-            task,
-            timeout,
-        ])
-    } finally {
-        if (timeoutId)
-            clearTimeout(timeoutId)
-    }
-}
-
 const processor =
     new Demucs.DemucsProcessor({
         ort,
 
-        modelPath: MODEL_PATH,
+        modelPath:
+            '/models/htdemucs_embedded.onnx',
 
         sessionOptions: {
             executionProviders: [
+                'webgpu',
                 'wasm',
             ],
-            graphOptimizationLevel: 'basic',
-        },
-
-        onDownloadProgress: (
-            loadedSize: number,
-            totalSize: number,
-        ) => {
-            if (!totalSize)
-                return
-
-            const downloadProgress =
-                Math.min(
-                    loadedSize / totalSize,
-                    1,
-                )
-
-            postProgress(
-                50 + downloadProgress * 20,
-                `Loading Demucs model... ${Math.round(downloadProgress * 100)}%`,
-            )
+            graphOptimizationLevel: 'all',
         },
 
         onProgress: (progress: DemucsProgress) => {
             const normalized =
                 clampProgress(
-                    55 + progress.progress * 44,
+                    progress.progress * 100,
                 )
 
             postProgress(
@@ -235,28 +144,34 @@ self.onmessage = async (
 
         if (!loaded) {
             postProgress(
-                48,
-                'Checking Demucs model asset...',
-            )
-
-            await ensureModelAvailable()
-
-            postProgress(
-                50,
+                10,
                 'Loading Demucs model...',
             )
 
-            await withTimeout(
-                processor.loadModel(),
-                MODEL_LOAD_TIMEOUT_MS,
-                'Demucs model loading timed out. Please refresh the page and try a shorter audio file or a desktop Chrome/Edge browser.',
-            )
+            console.time('[StemMix Worker] Demucs model load')
+            console.info('[StemMix Worker] Loading Demucs model', {
+                modelPath:
+                    '/models/htdemucs_embedded.onnx',
+                executionProviders: [
+                    'webgpu',
+                    'wasm',
+                ],
+                graphOptimizationLevel:
+                    'all',
+                wasmThreads:
+                    ort.env.wasm.numThreads,
+            })
+
+            await processor.loadModel()
+
+            console.timeEnd('[StemMix Worker] Demucs model load')
+            console.info('[StemMix Worker] Demucs model loaded successfully')
 
             loaded = true
         }
 
         postProgress(
-            55,
+            18,
             'Preparing audio buffers...',
         )
 
@@ -265,6 +180,8 @@ self.onmessage = async (
                 leftChannel,
                 rightChannel,
             )
+
+        console.info('[StemMix Worker] Separation completed')
 
         postProgress(
             100,
@@ -276,7 +193,7 @@ self.onmessage = async (
             stems: result,
         })
     } catch (err) {
-        console.error(err)
+        console.error('[StemMix Worker] Separation failed', err)
 
         self.postMessage({
             type: 'SEPARATION_ERROR',
