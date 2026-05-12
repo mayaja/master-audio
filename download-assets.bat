@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-set "FILE_ID=1x8XMsXXLPhKvmKONb4blogMyF8OEjM9X"
+set "FILE_URL=https://github.com/mayaja/master-audio/releases/download/assets-v1/htdemucs_embedded.onnx"
 set "TARGET_DIR=public\models"
 set "OUT_FILE=%TARGET_DIR%\htdemucs_embedded.onnx"
 
@@ -19,13 +19,8 @@ if exist "%OUT_FILE%" (
     )
 )
 
-if "%FILE_ID%"=="" (
-    echo Error: FILE_ID is empty.
-    exit /b 1
-)
-
 echo Downloading StemMix model to %OUT_FILE%...
-curl.exe -L "https://drive.google.com/uc?export=download&id=%FILE_ID%" -o "%OUT_FILE%"
+curl.exe -L "%FILE_URL%" -o "%OUT_FILE%"
 
 if errorlevel 1 (
     echo Download failed.

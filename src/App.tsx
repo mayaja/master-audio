@@ -97,13 +97,13 @@ function App() {
   return (
     <main className="min-h-screen overflow-hidden text-zinc-100">
       <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-7 sm:px-8 lg:px-10 lg:py-8">
-        <a href="/" className="flex items-center gap-4" aria-label="Master Audio home">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 shadow-[0_18px_45px_-28px_rgba(34,211,238,0.8)]">
-            <img src="/logo.svg" alt="" className="h-10 w-10" />
+        <a href="/" className="flex items-center gap-5" aria-label="Master Audio home">
+          <span className="flex h-20 w-20 items-center justify-center rounded-3xl border border-cyan-300/25 bg-cyan-300/10 shadow-[0_22px_60px_-30px_rgba(34,211,238,0.95)]">
+            <img src="/logo.svg" alt="" className="h-14 w-14" />
           </span>
           <div>
-            <p className="text-xl font-black tracking-tight text-white sm:text-2xl">Master Audio</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.26em] text-cyan-200/75">Production Suite</p>
+            <p className="text-3xl font-black tracking-tight text-white sm:text-4xl">Master Audio</p>
+            <p className="mt-1.5 text-sm uppercase tracking-[0.28em] text-cyan-200/75">Production Suite</p>
           </div>
         </a>
 
@@ -122,7 +122,7 @@ function App() {
             Three audio workflows, one professional hub
           </div>
 
-          <h1 className="max-w-4xl text-5xl font-black leading-[0.98] text-white sm:text-6xl lg:text-7xl">
+          <h1 className="max-w-xl text-2xl font-black leading-snug text-white sm:text-3xl lg:text-4xl">
             Master, clean, and split audio in one focused workspace.
           </h1>
 
@@ -150,9 +150,9 @@ function App() {
           </div>
         </div>
 
-        <div className="relative min-h-[420px] lg:min-h-[560px]">
+        <div className="relative min-h-[340px] lg:min-h-[430px]">
           <div className="absolute inset-0 rounded-[2rem] border border-white/10 bg-[#0d1521]/80 shadow-[0_30px_90px_-40px_rgba(0,0,0,0.95)] backdrop-blur" />
-          <div className="relative flex h-full flex-col justify-between p-5 sm:p-7">
+          <div className="relative flex h-full flex-col justify-between p-5 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-cyan-200/70">Suite Signal</p>
@@ -163,8 +163,8 @@ function App() {
               </div>
             </div>
 
-            <div className="my-8 space-y-3">
-              <div className="h-16 rounded-2xl border border-cyan-300/15 bg-cyan-300/10 p-3">
+            <div className="my-5 space-y-3">
+              <div className="h-14 rounded-2xl border border-cyan-300/15 bg-cyan-300/10 p-3">
                 <div className="flex h-full items-center gap-1">
                   {Array.from({ length: 42 }).map((_, index) => (
                     <span

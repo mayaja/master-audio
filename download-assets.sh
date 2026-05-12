@@ -2,7 +2,7 @@
 
 set -e
 
-FILE_ID="1x8XMsXXLPhKvmKONb4blogMyF8OEjM9X"
+FILE_URL="https://github.com/mayaja/master-audio/releases/download/assets-v1/htdemucs_embedded.onnx"
 TARGET_DIR="public/models"
 OUT_FILE="$TARGET_DIR/htdemucs_embedded.onnx"
 
@@ -13,13 +13,8 @@ if [ -s "$OUT_FILE" ]; then
     exit 0
 fi
 
-if [ -z "$FILE_ID" ]; then
-    echo "Error: FILE_ID is empty."
-    exit 1
-fi
-
 echo "Downloading StemMix model to $OUT_FILE..."
-curl -L "https://drive.google.com/uc?export=download&id=$FILE_ID" -o "$OUT_FILE"
+curl -L "$FILE_URL" -o "$OUT_FILE"
 
 MIN_BYTES=100000000
 FILE_SIZE=$(wc -c < "$OUT_FILE" | tr -d ' ')
