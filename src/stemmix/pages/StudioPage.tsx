@@ -16,6 +16,39 @@ export default function StudioPage() {
             <Header />
 
             <main className="mx-auto max-w-[1850px] space-y-5 p-5">
+                <section className="rounded-[18px] border border-cyan-300/10 bg-gradient-to-r from-cyan-300/[0.08] via-white/[0.03] to-fuchsia-300/[0.06] p-4 shadow-[0_10px_40px_rgba(0,0,0,0.28)]">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-200/75">
+                                Quick Guide
+                            </p>
+
+                            <h2 className="mt-1 text-lg font-bold text-white">
+                                Split stems, adjust the mix, then export your final result.
+                            </h2>
+                        </div>
+
+                        <div className="grid gap-2 text-[12px] text-zinc-300 sm:grid-cols-2 lg:grid-cols-4">
+                            {[
+                                'Upload an audio file',
+                                'Click Split Stems',
+                                'Tune volume, pan, EQ, FX',
+                                'Export when all stems are ready',
+                            ].map((step, index) => (
+                                <div
+                                    key={step}
+                                    className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-black/20 px-3 py-2"
+                                >
+                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-cyan-300 text-[11px] font-black text-black">
+                                        {index + 1}
+                                    </span>
+                                    <span>{step}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
                 <section className="grid grid-cols-12 items-stretch gap-5">
                     <div className="col-span-4 rounded-[18px] border border-white/[0.06] bg-gradient-to-b from-[#0d1422]/95 to-[#090d18]/95 p-4 shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
                         <div className="mb-6">
