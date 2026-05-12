@@ -86,6 +86,8 @@ If the download URL changes, update both scripts.
 
 - Do not commit `node_modules`.
 - Do not commit `public/models/*.onnx`.
+- Before publishing, replace `https://master-audio.vercel.app` in `index.html`, `public/robots.txt`, `public/sitemap.xml`, and `public/llms.txt` with your final production domain.
+- After deployment, submit `https://your-domain/sitemap.xml` to Google Search Console and Bing Webmaster Tools so search engines can discover the main pages faster.
 - For Vercel, use:
   - Build command: `npm run build`
   - Output directory: `dist`

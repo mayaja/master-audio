@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://masteraudio.vercel.app/sitemap.xml

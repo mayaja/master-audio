@@ -1,0 +1,25 @@
+# Master Audio
+
+Master Audio is a free, browser-based audio production suite for musicians, podcasters, creators, and audio editors who need safe audio tools that run locally in the browser.
+
+## Main Tools
+
+- Mastering Audio: audio mastering workspace with loudness, true peak, tone, dynamics, and WAV export controls.
+- Clean Noise: browser audio cleanup workspace for reducing unwanted noise and preparing cleaner audio.
+- StemMix: stem separation workspace for splitting audio into stems, previewing waveforms, mixing tracks, applying effects, and exporting results.
+
+## Privacy And Safety
+
+Master Audio is local-first. Uploaded audio is processed in the user's browser and is not stored by the application server. This makes the app suitable for users searching for free and safer private audio tools.
+
+## Routes
+
+- Home: https://masteraudio.vercel.app/
+- Mastering Audio: https://masteraudio.vercel.app/mastering
+- Clean Noise: https://masteraudio.vercel.app/noise-cleaner
+- StemMix: https://masteraudio.vercel.app/stems
+- Help Manual: https://masteraudio.vercel.app/help-manual.html
+
+## Search Summary
+
+Master Audio offers free audio mastering, noise cleaning, and stem splitting tools in one focused browser workspace. It is designed for private local audio processing without server-side audio storage.
