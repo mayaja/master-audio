@@ -8,10 +8,15 @@ ort.env.wasm.wasmPaths = {
     wasm: ortWasmJsepUrl,
 }
 
+const USER_AGENT =
+    navigator.userAgent
+const IS_SAFARI =
+    /^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(USER_AGENT)
+
 ort.env.wasm.numThreads =
     crossOriginIsolated
         ? Math.min(
-            4,
+            IS_SAFARI ? 2 : 4,
             navigator.hardwareConcurrency || 4,
         )
         : 1
@@ -51,6 +56,8 @@ console.info('[StemMix Worker] Runtime environment', {
     hasWebGPU:
         typeof navigator !== 'undefined' &&
         Boolean(navigator.gpu),
+    isSafari:
+        IS_SAFARI,
     wasmPath:
         ortWasmJsepUrl,
     wasmMjsPath:
@@ -114,7 +121,7 @@ function createProcessor(
     mode: EngineMode,
 ) {
     const executionProviders =
-        mode === 'fast-webgpu'
+        mode === 'fast-webgpu' && !IS_SAFARI
             ? [
                 'webgpu',
                 'wasm',
@@ -131,7 +138,7 @@ function createProcessor(
         sessionOptions: {
             executionProviders,
             graphOptimizationLevel:
-                mode === 'fast-webgpu'
+                mode === 'fast-webgpu' && !IS_SAFARI
                     ? 'all'
                     : 'basic',
         },
@@ -189,7 +196,11 @@ async function withOptionalTimeout<T>(
     }
 }
 
-let processor = createProcessor('fast-webgpu')
+let processor = createProcessor(
+    IS_SAFARI
+        ? 'stable-wasm'
+        : 'fast-webgpu',
+)
 let loadedMode: EngineMode | null = null
 
 let loaded = false
@@ -231,14 +242,23 @@ self.onmessage = async (
             console.time('[StemMix Worker] Demucs model load')
             console.info('[StemMix Worker] Loading Demucs model', {
                 modelPath: MODEL_PATH,
-                executionProviders: [
-                    'webgpu',
-                    'wasm',
-                ],
+                executionProviders:
+                    IS_SAFARI
+                        ? [
+                            'wasm',
+                        ]
+                        : [
+                            'webgpu',
+                            'wasm',
+                        ],
                 graphOptimizationLevel:
-                    'all',
+                    IS_SAFARI
+                        ? 'basic'
+                        : 'all',
                 wasmThreads:
                     ort.env.wasm.numThreads,
+                isSafari:
+                    IS_SAFARI,
             })
 
             try {
@@ -248,7 +268,10 @@ self.onmessage = async (
                     'Fast WebGPU model loading timed out.',
                 )
 
-                loadedMode = 'fast-webgpu'
+                loadedMode =
+                    IS_SAFARI
+                        ? 'stable-wasm'
+                        : 'fast-webgpu'
             } catch (err) {
                 if (!import.meta.env.PROD)
                     throw err
