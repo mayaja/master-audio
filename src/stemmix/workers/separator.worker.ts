@@ -16,23 +16,6 @@ ort.env.wasm.numThreads =
         )
         : 1
 
-console.info('[StemMix Worker] Runtime environment', {
-    crossOriginIsolated,
-    hardwareConcurrency:
-        navigator.hardwareConcurrency,
-    wasmThreads:
-        ort.env.wasm.numThreads,
-    hasWebGPU:
-        typeof navigator !== 'undefined' &&
-        Boolean(navigator.gpu),
-    wasmPath:
-        ortWasmJsepUrl,
-    wasmMjsPath:
-        ortWasmJsepMjsUrl,
-    modelPath:
-        '/models/htdemucs_embedded.onnx',
-})
-
 type DemucsProgress = {
     progress: number
     currentSegment: number
@@ -48,10 +31,39 @@ type SeparateMessage = {
 type EngineMode = 'fast-webgpu' | 'stable-wasm'
 
 const MODEL_PATH = '/models/htdemucs_embedded.onnx'
+const IS_LOCAL_HOST =
+    [
+        'localhost',
+        '127.0.0.1',
+        '0.0.0.0',
+    ].includes(self.location.hostname)
 const FAST_MODEL_LOAD_TIMEOUT_MS =
-    import.meta.env.PROD
+    import.meta.env.PROD && !IS_LOCAL_HOST
         ? 45_000
         : 0
+
+console.info('[StemMix Worker] Runtime environment', {
+    crossOriginIsolated,
+    hardwareConcurrency:
+        navigator.hardwareConcurrency,
+    wasmThreads:
+        ort.env.wasm.numThreads,
+    hasWebGPU:
+        typeof navigator !== 'undefined' &&
+        Boolean(navigator.gpu),
+    wasmPath:
+        ortWasmJsepUrl,
+    wasmMjsPath:
+        ortWasmJsepMjsUrl,
+    modelPath:
+        MODEL_PATH,
+    origin:
+        self.location.origin,
+    isLocalHost:
+        IS_LOCAL_HOST,
+    fastModelLoadTimeoutMs:
+        FAST_MODEL_LOAD_TIMEOUT_MS,
+})
 
 function clampProgress(value: number) {
     return Math.min(
@@ -195,6 +207,16 @@ self.onmessage = async (
         if (type !== 'SEPARATE')
             return
 
+        const audioDurationSeconds =
+            leftChannel.length / 44100
+
+        console.info('[StemMix Worker] Separation request', {
+            samples:
+                leftChannel.length,
+            estimatedDurationSeconds:
+                Math.round(audioDurationSeconds),
+        })
+
         postProgress(
             4,
             'Preparing AI engine...',
@@ -272,13 +294,27 @@ self.onmessage = async (
             'Preparing audio buffers...',
         )
 
+        console.time('[StemMix Worker] Stem separation inference')
+        console.info('[StemMix Worker] Starting stem separation', {
+            mode:
+                loadedMode,
+            samples:
+                leftChannel.length,
+            estimatedDurationSeconds:
+                Math.round(audioDurationSeconds),
+        })
+
         const result =
             await processor.separate(
                 leftChannel,
                 rightChannel,
             )
 
-        console.info('[StemMix Worker] Separation completed')
+        console.timeEnd('[StemMix Worker] Stem separation inference')
+        console.info('[StemMix Worker] Separation completed', {
+            mode:
+                loadedMode,
+        })
 
         postProgress(
             100,
