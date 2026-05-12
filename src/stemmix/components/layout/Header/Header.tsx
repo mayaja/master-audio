@@ -625,10 +625,17 @@ export default function Header() {
 
             // Tangani update progress dari worker
             if (type === 'progress' || type === 'PROGRESS') {
-                // Gunakan mapping progress agar tidak melompat (offset dari 45% ke 100%)
-                const calculatedProgress = progress !== undefined 
-                    ? Math.floor(45 + (progress * 0.55)) 
-                    : undefined;
+                const calculatedProgress = progress !== undefined
+                    ? Math.floor(
+                        Math.min(
+                            100,
+                            Math.max(
+                                0,
+                                progress,
+                            ),
+                        ),
+                    )
+                    : undefined
 
                 if (calculatedProgress !== undefined) setSeparationProgress(calculatedProgress)
                 const nextStatus = status ?? message

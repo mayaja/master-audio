@@ -26,6 +26,9 @@ type SeparateMessage = {
     rightChannel: Float32Array<ArrayBuffer>
 }
 
+const MODEL_PATH = '/models/htdemucs_embedded.onnx'
+const MIN_MODEL_BYTES = 100_000_000
+
 function clampProgress(value: number) {
     return Math.min(
         100,
@@ -71,12 +74,41 @@ function postProgress(
     })
 }
 
+async function ensureModelAvailable() {
+    const response = await fetch(
+        MODEL_PATH,
+        {
+            method: 'HEAD',
+            cache: 'no-store',
+        },
+    )
+
+    if (!response.ok) {
+        throw new Error(
+            `Demucs model is not available at ${MODEL_PATH}. Server returned ${response.status}. Make sure htdemucs_embedded.onnx is deployed to public/models.`,
+        )
+    }
+
+    const contentLength =
+        Number(
+            response.headers.get('content-length') ?? 0,
+        )
+
+    if (
+        contentLength > 0 &&
+        contentLength < MIN_MODEL_BYTES
+    ) {
+        throw new Error(
+            `Demucs model at ${MODEL_PATH} looks incomplete (${contentLength} bytes). Re-upload or re-download the model asset.`,
+        )
+    }
+}
+
 const processor =
     new Demucs.DemucsProcessor({
         ort,
 
-        modelPath:
-            '/models/htdemucs_embedded.onnx',
+        modelPath: MODEL_PATH,
 
         sessionOptions: {
             executionProviders: [
@@ -89,7 +121,7 @@ const processor =
         onProgress: (progress: DemucsProgress) => {
             const normalized =
                 clampProgress(
-                    progress.progress * 100,
+                    55 + progress.progress * 44,
                 )
 
             postProgress(
@@ -129,8 +161,15 @@ self.onmessage = async (
 
         if (!loaded) {
             postProgress(
-                10,
-                'Loading Demucs model...',
+                48,
+                'Checking Demucs model asset...',
+            )
+
+            await ensureModelAvailable()
+
+            postProgress(
+                50,
+                'Loading Demucs model. This can take longer on the first production run...',
             )
 
             await processor.loadModel()
@@ -139,7 +178,7 @@ self.onmessage = async (
         }
 
         postProgress(
-            18,
+            55,
             'Preparing audio buffers...',
         )
 
