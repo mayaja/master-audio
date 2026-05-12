@@ -6,7 +6,13 @@ ort.env.wasm.wasmPaths = {
     wasm: ortWasmJsepUrl,
 }
 
-ort.env.wasm.numThreads = 1
+ort.env.wasm.numThreads =
+    crossOriginIsolated
+        ? Math.min(
+            4,
+            navigator.hardwareConcurrency || 4,
+        )
+        : 1
 
 type DemucsProgress = {
     progress: number
