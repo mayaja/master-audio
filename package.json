@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "sh download-assets.sh && vite",
     "build": "sh download-assets.sh && tsc && vite build",
+    "build:hosting": "tsc && vite build && node scripts/remove-hosting-models.mjs",
     "dev:win": "download-assets.bat && vite",
     "build:win": "download-assets.bat && tsc && vite build",
+    "build:hosting:win": "tsc && vite build && node scripts/remove-hosting-models.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"

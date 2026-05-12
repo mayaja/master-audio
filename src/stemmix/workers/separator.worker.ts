@@ -26,7 +26,10 @@ type SeparateMessage = {
     rightChannel: Float32Array<ArrayBuffer>
 }
 
-const MODEL_PATH = '/models/htdemucs_embedded.onnx'
+const DEFAULT_LOCAL_MODEL_PATH = '/models/htdemucs_embedded.onnx'
+const MODEL_PATH =
+    import.meta.env.VITE_DEMUCS_MODEL_URL?.trim() ||
+    DEFAULT_LOCAL_MODEL_PATH
 const MIN_MODEL_BYTES = 100_000_000
 
 function clampProgress(value: number) {
@@ -75,31 +78,53 @@ function postProgress(
 }
 
 async function ensureModelAvailable() {
-    const response = await fetch(
+    const headResponse = await fetch(
         MODEL_PATH,
         {
             method: 'HEAD',
             cache: 'no-store',
         },
-    )
+    ).catch(() => null)
 
-    if (!response.ok) {
-        throw new Error(
-            `Demucs model is not available at ${MODEL_PATH}. Server returned ${response.status}. Make sure htdemucs_embedded.onnx is deployed to public/models.`,
-        )
+    if (headResponse?.ok) {
+        const contentLength =
+            Number(
+                headResponse.headers.get('content-length') ?? 0,
+            )
+
+        if (
+            contentLength > 0 &&
+            contentLength < MIN_MODEL_BYTES
+        ) {
+            throw new Error(
+                `Demucs model at ${MODEL_PATH} looks incomplete (${contentLength} bytes). Re-upload or re-download the model asset.`,
+            )
+        }
+
+        return
     }
 
-    const contentLength =
-        Number(
-            response.headers.get('content-length') ?? 0,
-        )
+    const rangeResponse = await fetch(
+        MODEL_PATH,
+        {
+            method: 'GET',
+            cache: 'no-store',
+            headers: {
+                Range: 'bytes=0-1023',
+            },
+        },
+    ).catch(() => null)
 
-    if (
-        contentLength > 0 &&
-        contentLength < MIN_MODEL_BYTES
-    ) {
+    await rangeResponse?.body?.cancel()
+
+    if (!rangeResponse?.ok) {
+        const status =
+            headResponse?.status ??
+            rangeResponse?.status ??
+            'network error'
+
         throw new Error(
-            `Demucs model at ${MODEL_PATH} looks incomplete (${contentLength} bytes). Re-upload or re-download the model asset.`,
+            `Demucs model is not available at ${MODEL_PATH}. Server returned ${status}. Make sure the model URL is reachable and supports browser requests.`,
         )
     }
 }
@@ -112,7 +137,6 @@ const processor =
 
         sessionOptions: {
             executionProviders: [
-                'webgpu',
                 'wasm',
             ],
             graphOptimizationLevel: 'all',

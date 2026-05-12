@@ -71,6 +71,18 @@ npm run build:win
 
 The production output will be generated in `dist`.
 
+If you host the Demucs model on an external CDN, use the hosting build so the local model is removed from the deployment output:
+
+```bash
+npm run build:hosting
+```
+
+Windows equivalent:
+
+```bat
+npm run build:hosting:win
+```
+
 ## Large Model Asset
 
 `public/models/htdemucs_embedded.onnx` is intentionally ignored by Git because it is a large model file.
@@ -81,6 +93,8 @@ The file is downloaded by:
 - `download-assets.bat`
 
 If the download URL changes, update both scripts.
+
+In production, StemMix uses `/models/htdemucs_embedded.onnx` by default. If you set `VITE_DEMUCS_MODEL_URL`, StemMix will use that external model URL instead. The model host must be reachable from the browser and must support cross-origin browser requests.
 
 ## Notes For Deployment
 
