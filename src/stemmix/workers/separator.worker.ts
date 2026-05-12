@@ -1,8 +1,10 @@
 import * as Demucs from 'demucs-web'
 import * as ort from 'onnxruntime-web'
+import ortWasmJsepMjsUrl from 'onnxruntime-web/ort-wasm-simd-threaded.jsep.mjs?url'
 import ortWasmJsepUrl from 'onnxruntime-web/ort-wasm-simd-threaded.jsep.wasm?url'
 
 ort.env.wasm.wasmPaths = {
+    mjs: ortWasmJsepMjsUrl,
     wasm: ortWasmJsepUrl,
 }
 
@@ -25,6 +27,8 @@ console.info('[StemMix Worker] Runtime environment', {
         Boolean(navigator.gpu),
     wasmPath:
         ortWasmJsepUrl,
+    wasmMjsPath:
+        ortWasmJsepMjsUrl,
     modelPath:
         '/models/htdemucs_embedded.onnx',
 })
@@ -40,6 +44,14 @@ type SeparateMessage = {
     leftChannel: Float32Array<ArrayBuffer>
     rightChannel: Float32Array<ArrayBuffer>
 }
+
+type EngineMode = 'fast-webgpu' | 'stable-wasm'
+
+const MODEL_PATH = '/models/htdemucs_embedded.onnx'
+const FAST_MODEL_LOAD_TIMEOUT_MS =
+    import.meta.env.PROD
+        ? 45_000
+        : 0
 
 function clampProgress(value: number) {
     return Math.min(
@@ -86,19 +98,30 @@ function postProgress(
     })
 }
 
-const processor =
-    new Demucs.DemucsProcessor({
-        ort,
-
-        modelPath:
-            '/models/htdemucs_embedded.onnx',
-
-        sessionOptions: {
-            executionProviders: [
+function createProcessor(
+    mode: EngineMode,
+) {
+    const executionProviders =
+        mode === 'fast-webgpu'
+            ? [
                 'webgpu',
                 'wasm',
-            ],
-            graphOptimizationLevel: 'all',
+            ]
+            : [
+                'wasm',
+            ]
+
+    return new Demucs.DemucsProcessor({
+        ort,
+
+        modelPath: MODEL_PATH,
+
+        sessionOptions: {
+            executionProviders,
+            graphOptimizationLevel:
+                mode === 'fast-webgpu'
+                    ? 'all'
+                    : 'basic',
         },
 
         onProgress: (progress: DemucsProgress) => {
@@ -121,6 +144,41 @@ const processor =
 
         onLog: () => {},
     })
+}
+
+async function withOptionalTimeout<T>(
+    task: Promise<T>,
+    timeoutMs: number,
+    timeoutMessage: string,
+) {
+    if (!timeoutMs)
+        return task
+
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+    const timeout =
+        new Promise<never>((_, reject) => {
+            timeoutId = setTimeout(
+                () => reject(
+                    new Error(timeoutMessage),
+                ),
+                timeoutMs,
+            )
+        })
+
+    try {
+        return await Promise.race([
+            task,
+            timeout,
+        ])
+    } finally {
+        if (timeoutId)
+            clearTimeout(timeoutId)
+    }
+}
+
+let processor = createProcessor('fast-webgpu')
+let loadedMode: EngineMode | null = null
 
 let loaded = false
 
@@ -150,8 +208,7 @@ self.onmessage = async (
 
             console.time('[StemMix Worker] Demucs model load')
             console.info('[StemMix Worker] Loading Demucs model', {
-                modelPath:
-                    '/models/htdemucs_embedded.onnx',
+                modelPath: MODEL_PATH,
                 executionProviders: [
                     'webgpu',
                     'wasm',
@@ -162,10 +219,50 @@ self.onmessage = async (
                     ort.env.wasm.numThreads,
             })
 
-            await processor.loadModel()
+            try {
+                await withOptionalTimeout(
+                    processor.loadModel(),
+                    FAST_MODEL_LOAD_TIMEOUT_MS,
+                    'Fast WebGPU model loading timed out.',
+                )
+
+                loadedMode = 'fast-webgpu'
+            } catch (err) {
+                if (!import.meta.env.PROD)
+                    throw err
+
+                console.warn(
+                    '[StemMix Worker] Fast WebGPU engine did not finish loading, retrying with stable WASM.',
+                    err,
+                )
+
+                postProgress(
+                    12,
+                    'Fast engine unavailable, switching to stable WASM...',
+                )
+
+                processor = createProcessor('stable-wasm')
+
+                console.info('[StemMix Worker] Loading Demucs model with stable WASM', {
+                    modelPath: MODEL_PATH,
+                    executionProviders: [
+                        'wasm',
+                    ],
+                    graphOptimizationLevel:
+                        'basic',
+                    wasmThreads:
+                        ort.env.wasm.numThreads,
+                })
+
+                await processor.loadModel()
+
+                loadedMode = 'stable-wasm'
+            }
 
             console.timeEnd('[StemMix Worker] Demucs model load')
-            console.info('[StemMix Worker] Demucs model loaded successfully')
+            console.info('[StemMix Worker] Demucs model loaded successfully', {
+                mode: loadedMode,
+            })
 
             loaded = true
         }

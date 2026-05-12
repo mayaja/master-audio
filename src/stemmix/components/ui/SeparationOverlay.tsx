@@ -82,6 +82,15 @@ export default function SeparationOverlay() {
                                 AI is analyzing frequencies, transients,
                                 vocals, drums, bass, and harmonic layers.
                             </p>
+
+                            <div className="mt-4 rounded-2xl border border-cyan-300/10 bg-cyan-300/[0.06] px-4 py-3 text-left">
+                                <p className="text-[12px] font-semibold leading-relaxed text-cyan-100">
+                                    This process can take several minutes,
+                                    especially on the first run or for longer
+                                    songs. Processing happens locally in your
+                                    browser, so speed depends on your device.
+                                </p>
+                            </div>
                         </div>
 
                         {/* Progress */}
@@ -119,7 +128,7 @@ export default function SeparationOverlay() {
                         <div className="mt-6 flex items-center justify-center gap-2 text-[11px] tracking-[0.14em] text-zinc-500">
                             <div className="h-[5px] w-[5px] animate-pulse rounded-full bg-cyan-400" />
 
-                            PLEASE KEEP THIS TAB OPEN
+                            PLEASE KEEP THIS TAB OPEN UNTIL IT FINISHES
                         </div>
                     </motion.div>
                 </motion.div>
