@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mastering Audio - Help & Manual</title>
+    <style>
+      :root {
+        --bg: #0d1220;
+        --panel: #131a2c;
+        --panel-soft: #1a2338;
+        --text: #e9edf7;
+        --muted: #9fb0d0;
+        --accent: #6ee7ff;
+        --accent-soft: rgba(110, 231, 255, 0.16);
+        --ok: #86efac;
+        --warn: #fcd34d;
+        --danger: #fca5a5;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        background: radial-gradient(circle at top right, #1f2a45 0%, var(--bg) 45%);
+        color: var(--text);
+        line-height: 1.55;
+      }
+
+      .wrap {
+        width: min(980px, 92vw);
+        margin: 28px auto 48px;
+      }
+
+      .hero {
+        background: linear-gradient(135deg, rgba(110, 231, 255, 0.22), rgba(110, 231, 255, 0.06));
+        border: 1px solid rgba(110, 231, 255, 0.35);
+        border-radius: 18px;
+        padding: 20px;
+      }
+
+      h1 {
+        margin: 0 0 6px;
+        font-size: 1.7rem;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 1.15rem;
+      }
+
+      .sub {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid rgba(159, 176, 208, 0.2);
+        border-radius: 14px;
+        padding: 14px;
+      }
+
+      .section {
+        margin-top: 18px;
+      }
+
+      .section .card + .card {
+        margin-top: 12px;
+      }
+
+      ul,
+      ol {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+
+      li + li {
+        margin-top: 6px;
+      }
+
+      .tag {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      .ok,
+      .warn,
+      .danger {
+        font-weight: 700;
+      }
+
+      .ok {
+        color: var(--ok);
+      }
+
+      .warn {
+        color: var(--warn);
+      }
+
+      .danger {
+        color: var(--danger);
+      }
+
+      .footer {
+        margin-top: 20px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      code {
+        color: #d4f6ff;
+        background: var(--panel-soft);
+        padding: 0 4px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="hero">
+        <h1>Mastering Audio - Help & Manual</h1>
+        <p class="sub">
+          A complete guide to the features, recommended workflow, and how to reach a master that matches the target platform.
+        </p>
+        <span class="tag">Version: Platform-aware Presets + Auto Adapt</span>
+      </section>
+
+      <section class="section grid">
+        <article class="card">
+          <h2>1. Quick Workflow (Recommended)</h2>
+          <ol>
+            <li>Load an audio file using the <code>Load Audio</code> button.</li>
+            <li>Select the target platform (Spotify, YouTube, Apple Music).</li>
+            <li>Choose the genre preset that best matches the song.</li>
+            <li>Click <code>Apply Target</code>.</li>
+            <li>Run <code>Auto Adapt</code> (Quick or Full Track).</li>
+            <li>Check the Validation Report until most items show <span class="ok">PASS</span>.</li>
+            <li>Compare Original vs Processed mode (A/B).</li>
+            <li>Export WAV and Export Report.</li>
+          </ol>
+        </article>
+
+        <article class="card">
+          <h2>2. When to Choose Quick vs Full</h2>
+          <ul>
+            <li><b>Quick</b>: faster, useful for drafts and early exploration.</li>
+            <li><b>Full Track</b>: more accurate, useful before final export.</li>
+            <li>If the song has major arrangement changes between sections, use Full Track.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="section">
+        <article class="card">
+          <h2>3. Main Control Functions</h2>
+          <ul>
+            <li><b>Input / Output</b>: adjust the starting and ending gain of the mastering chain.</li>
+            <li><b>Tone Low Mid High</b>: global tonal shaping before detailed EQ work.</li>
+            <li><b>Compressor</b>: controls density, punch, and dynamics.</li>
+            <li><b>Limiter</b>: controls final loudness and true peak safety.</li>
+            <li><b>Band Solo + Solo Sweep</b>: isolate and identify problematic frequency areas.</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h2>4. Target Validation (Practical)</h2>
+          <ul>
+            <li><b>Integrated Loudness</b>: keep it within the target profile zone.</li>
+            <li><b>True Peak</b>: keep it safe from inter-sample clipping.</li>
+            <li><b>Crest Factor</b>: avoid over-compression so dynamics stay alive.</li>
+            <li><b>Stereo Correlation</b>: make sure it stays compatible during mono playback.</li>
+          </ul>
+          <p>
+            Ideal status: mostly <span class="ok">PASS</span>, a few <span class="warn">WARN</span> items can still be acceptable,
+            but avoid <span class="danger">FAIL</span> on true peak and integrated loudness.
+          </p>
+        </article>
+      </section>
+
+      <section class="section">
+        <article class="card">
+          <h2>5. Quick Troubleshooting</h2>
+          <ul>
+            <li>
+              <b>Integrated often shows WARN/FAIL:</b> lower limiter <code>Drive</code>, lower <code>Output</code>, or choose <code>Safe</code> mode.
+            </li>
+            <li>
+              <b>True Peak FAIL:</b> lower limiter <code>Ceiling</code> and <code>Drive</code>.
+            </li>
+            <li>
+              <b>Crest Factor WARN/FAIL:</b> relax the compressor (lower ratio, slower attack) and reduce limiter drive.
+            </li>
+            <li>
+              <b>Sound is too sharp:</b> lower <code>High</code>, then check the presence band with Solo Sweep.
+            </li>
+            <li>
+              <b>Low-end is boomy:</b> reduce <code>Low</code> or cut the lower band via EQ/sweep target band.
+            </li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h2>6. Recommended Final Workflow</h2>
+          <ol>
+            <li>Set the target platform and preset.</li>
+            <li>Apply Target.</li>
+            <li>Auto Adapt Full Track.</li>
+            <li>Make small manual fine-tuning moves (max 2 to 4 parameters).</li>
+            <li>Check the Validation Report again.</li>
+            <li>A/B against Original at the same listening level.</li>
+            <li>Export WAV + Export Report for documentation.</li>
+          </ol>
+        </article>
+      </section>
+
+      <p class="footer">
+        Note: all processing runs locally in the browser. For the most consistent results, use moderate monitoring levels and a similar reference track.
+      </p>
+    </main>
+  </body>
+</html>

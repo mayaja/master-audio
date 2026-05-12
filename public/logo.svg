@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title>Oteh Mastering Audio Logo</title>
+  <desc>Hexagonal badge with an O ring and waveform line.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0D1A26" />
+      <stop offset="100%" stop-color="#162F40" />
+    </linearGradient>
+    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2EF2D3" />
+      <stop offset="100%" stop-color="#B6FF6B" />
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="56" fill="url(#bg)" />
+
+  <path d="M128 28 208 74 208 182 128 228 48 182 48 74Z" fill="none" stroke="#7CE6FF" stroke-opacity="0.24" stroke-width="10" />
+  <circle cx="128" cy="128" r="74" fill="none" stroke="#EAFBFF" stroke-width="18" />
+  <circle cx="128" cy="128" r="47" fill="none" stroke="#0D1A26" stroke-width="10" />
+
+  <path d="M62 132 C76 132 76 102 90 102 C104 102 104 154 118 154 C132 154 132 116 146 116 C160 116 160 148 174 148 C188 148 188 124 194 124"
+        fill="none"
+        stroke="url(#wave)"
+        stroke-width="12"
+        stroke-linecap="round"
+        stroke-linejoin="round" />
+</svg>

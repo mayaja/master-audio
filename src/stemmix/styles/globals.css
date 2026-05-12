@@ -1,0 +1,90 @@
+/* =========================================
+   AUDIO UI ANIMATIONS
+========================================= */
+
+@keyframes meterBounce {
+  0% {
+    transform: scaleY(0.92);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+
+  100% {
+    transform: scaleY(0.94);
+  }
+}
+
+@keyframes waveformPulse {
+  0% {
+    opacity: 0.72;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes playheadMove {
+  0% {
+    transform: translateX(-40px);
+  }
+
+  100% {
+    transform: translateX(420px);
+  }
+}
+
+@keyframes glowPulse {
+  0% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes eqFloat {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-2px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-meter {
+  animation: meterBounce 1.2s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+.animate-waveform {
+  animation: waveformPulse 1.8s ease-in-out infinite;
+}
+
+.animate-playhead {
+  animation: playheadMove 4s linear infinite;
+}
+
+.animate-glow {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+.animate-eq {
+  animation: eqFloat 2.2s ease-in-out infinite;
+}

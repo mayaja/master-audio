@@ -1,0 +1,32 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(33, 150, 243, 0.18) 0%, transparent 32%),
+    radial-gradient(circle at 85% 10%, rgba(16, 185, 129, 0.16) 0%, transparent 30%),
+    linear-gradient(135deg, #05070d 0%, #07111f 52%, #0b1218 100%);
+  color: white;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
