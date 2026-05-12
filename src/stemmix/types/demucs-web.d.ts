@@ -31,6 +31,10 @@ declare module 'demucs-web' {
         onProgress?: (
             progress: DemucsProgress,
         ) => void
+        onDownloadProgress?: (
+            loadedSize: number,
+            totalSize: number,
+        ) => void
         onLog?: (...args: unknown[]) => void
     }
 

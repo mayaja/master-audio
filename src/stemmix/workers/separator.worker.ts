@@ -6,13 +6,7 @@ ort.env.wasm.wasmPaths = {
     wasm: ortWasmJsepUrl,
 }
 
-ort.env.wasm.numThreads =
-    crossOriginIsolated
-        ? Math.min(
-            4,
-            navigator.hardwareConcurrency || 4,
-        )
-        : 1
+ort.env.wasm.numThreads = 1
 
 type DemucsProgress = {
     progress: number
@@ -31,6 +25,7 @@ const MODEL_PATH =
     import.meta.env.VITE_DEMUCS_MODEL_URL?.trim() ||
     DEFAULT_LOCAL_MODEL_PATH
 const MIN_MODEL_BYTES = 100_000_000
+const MODEL_LOAD_TIMEOUT_MS = 180_000
 
 function clampProgress(value: number) {
     return Math.min(
@@ -129,6 +124,36 @@ async function ensureModelAvailable() {
     }
 }
 
+async function withTimeout<T>(
+    task: Promise<T>,
+    timeoutMs: number,
+    timeoutMessage: string,
+) {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+    const timeout =
+        new Promise<never>((_, reject) => {
+            timeoutId = setTimeout(
+                () => {
+                    reject(
+                        new Error(timeoutMessage),
+                    )
+                },
+                timeoutMs,
+            )
+        })
+
+    try {
+        return await Promise.race([
+            task,
+            timeout,
+        ])
+    } finally {
+        if (timeoutId)
+            clearTimeout(timeoutId)
+    }
+}
+
 const processor =
     new Demucs.DemucsProcessor({
         ort,
@@ -139,7 +164,26 @@ const processor =
             executionProviders: [
                 'wasm',
             ],
-            graphOptimizationLevel: 'all',
+            graphOptimizationLevel: 'basic',
+        },
+
+        onDownloadProgress: (
+            loadedSize: number,
+            totalSize: number,
+        ) => {
+            if (!totalSize)
+                return
+
+            const downloadProgress =
+                Math.min(
+                    loadedSize / totalSize,
+                    1,
+                )
+
+            postProgress(
+                50 + downloadProgress * 20,
+                `Loading Demucs model... ${Math.round(downloadProgress * 100)}%`,
+            )
         },
 
         onProgress: (progress: DemucsProgress) => {
@@ -193,10 +237,14 @@ self.onmessage = async (
 
             postProgress(
                 50,
-                'Loading Demucs model. This can take longer on the first production run...',
+                'Loading Demucs model...',
             )
 
-            await processor.loadModel()
+            await withTimeout(
+                processor.loadModel(),
+                MODEL_LOAD_TIMEOUT_MS,
+                'Demucs model loading timed out. Please refresh the page and try a shorter audio file or a desktop Chrome/Edge browser.',
+            )
 
             loaded = true
         }
