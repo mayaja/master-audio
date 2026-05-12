@@ -544,7 +544,11 @@ export class AudioEngine {
         this.pauseOffset =
             this.audioContext.currentTime - this.startTime;
 
-        this.source.stop();
+        try {
+            this.source.stop();
+        } catch {
+            // Source may already be stopped after Safari page restore.
+        }
 
         this.isPlaying = false;
     }
@@ -555,14 +559,34 @@ export class AudioEngine {
 
     stop() {
 
-        if (!this.source) return;
+        if (this.source) {
+            try {
+                this.source.stop();
+            } catch {
+                // Source may already be stopped after route changes or bfcache restores.
+            }
 
-        this.source.stop();
+            try {
+                this.source.disconnect();
+            } catch {
+                // Disconnect is best-effort for already-detached source nodes.
+            }
+        }
+
+        this.source = null;
 
         this.pauseOffset = 0;
 
         this.isPlaying = false;
         this.isPaused = false;
+    }
+
+    clearAudio() {
+
+        this.stop();
+
+        this.audioBuffer = null;
+        this.pauseOffset = 0;
     }
 
     // =========================================================

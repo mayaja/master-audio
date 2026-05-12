@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
 import { audioEngine } from "@/mastering/audio/engine/audioEngine";
 
@@ -14,6 +14,25 @@ export function useTransportController({ setStatusNote }: UseTransportController
   const [abMode, setAbMode] = useState<"original" | "processed">("processed");
 
   const canPlay = audioEngine.audioBuffer !== null;
+
+  const resetLoadedAudio = useCallback((note?: string) => {
+    audioEngine.clearAudio();
+    setTransportState("stopped");
+    setLoadedFileName(null);
+    setAudioUrl((previous) => {
+      if (previous) {
+        URL.revokeObjectURL(previous);
+      }
+
+      return null;
+    });
+    waveSurfer?.empty();
+    waveSurfer?.seekTo(0);
+
+    if (note) {
+      setStatusNote(note);
+    }
+  }, [setStatusNote, waveSurfer]);
 
   const handleLoadAudio = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,7 +103,32 @@ export function useTransportController({ setStatusNote }: UseTransportController
   }, [waveSurfer]);
 
   useEffect(() => {
+    const stopForPageLifecycle = () => {
+      audioEngine.stop();
+      setTransportState("stopped");
+      waveSurfer?.seekTo(0);
+    };
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        resetLoadedAudio("Audio was reset after Safari page restore. Please upload the track again.");
+      }
+    };
+
+    window.addEventListener("pagehide", stopForPageLifecycle);
+    window.addEventListener("pageshow", handlePageShow);
+
     return () => {
+      window.removeEventListener("pagehide", stopForPageLifecycle);
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, [resetLoadedAudio, waveSurfer]);
+
+  useEffect(() => {
+    return () => {
+      audioEngine.stop();
+      setTransportState("stopped");
+
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
       }

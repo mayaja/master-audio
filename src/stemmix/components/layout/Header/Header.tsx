@@ -142,6 +142,12 @@ export default function Header() {
         setExportStatus,
     ] = useState('Preparing export...')
 
+    const isSafariBrowser =
+        typeof navigator !== 'undefined' &&
+        /^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(
+            navigator.userAgent,
+        )
+
     // async function handleSeparate() {
     //     if (!audioBuffer) return
 
@@ -171,6 +177,12 @@ export default function Header() {
 
     async function handleSeparate() {
         if (!audioBuffer) return
+        if (isSafariBrowser) {
+            console.warn(
+                '[StemMix UI] Stem splitting is disabled in Safari because Safari may reload the tab during Demucs processing due to memory or energy limits.',
+            )
+            return
+        }
 
         // UI LOCK
         setSeparating(true)
@@ -240,7 +252,10 @@ export default function Header() {
     async function handleUpload(
         e: React.ChangeEvent<HTMLInputElement>,
     ) {
-        const file = e.target.files?.[0]
+        const input = e.currentTarget
+        const file = input.files?.[0]
+
+        input.value = ''
 
         if (!file) return
 
@@ -344,7 +359,7 @@ export default function Header() {
 
             setCurrentTime(0)
         } catch (err) {
-            console.error(err)
+            console.error('[StemMix UI] Failed to process uploaded audio', err)
         }
     }
 
@@ -803,6 +818,9 @@ export default function Header() {
                         type="file"
                         accept="audio/*"
                         className="hidden"
+                        onClick={(event) => {
+                            event.currentTarget.value = ''
+                        }}
                         onChange={handleUpload}
                     />
 
@@ -826,9 +844,12 @@ export default function Header() {
                             side="bottom"
                         >
                             <Button
-                                onClick={() =>
-                                    fileInputRef.current?.click()
-                                }
+                                onClick={() => {
+                                    if (fileInputRef.current) {
+                                        fileInputRef.current.value = ''
+                                        fileInputRef.current.click()
+                                    }
+                                }}
                                 className="inline-flex h-11 items-center gap-2 rounded-xl px-4"
                             >
                                 <Upload size={15} />
@@ -858,15 +879,17 @@ export default function Header() {
                         </Tooltip>
 
                         <Tooltip
-                            content="Split the audio into vocals, drums, bass, and other stems."
+                            content={isSafariBrowser
+                                ? 'Stem splitting is disabled in Safari because Safari may reload the tab during heavy local AI processing. Please use Chrome or Edge.'
+                                : 'Split the audio into vocals, drums, bass, and other stems.'}
                             side="bottom"
                         >
                             <Button
                                 onClick={handleSeparate}
-                                disabled={!audioBuffer || isSeparating}
+                                disabled={!audioBuffer || isSeparating || isSafariBrowser}
                                 className={[
                                     'inline-flex h-11 items-center gap-2 rounded-xl px-4',
-                                    !audioBuffer || isSeparating
+                                    !audioBuffer || isSeparating || isSafariBrowser
                                         ? 'cursor-not-allowed opacity-45'
                                         : 'border-cyan-300/15 bg-cyan-300/10 text-cyan-100 hover:border-cyan-300/25 hover:bg-cyan-300/15',
                                 ].join(' ')}
@@ -879,6 +902,14 @@ export default function Header() {
                         </Tooltip>
                     </div>
                 </div>
+
+                {isSafariBrowser && (
+                    <div className="rounded-2xl border border-amber-300/15 bg-amber-300/[0.07] px-4 py-3 text-[12px] leading-relaxed text-amber-100">
+                        Safari may automatically reload tabs during heavy
+                        browser-based AI stem splitting. For StemMix, please
+                        use Chrome or Edge for safer processing.
+                    </div>
+                )}
 
                 <div className="flex items-center gap-4 rounded-2xl border border-white/[0.08] bg-[#090d18]/95 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                     <div className="flex items-center gap-2">

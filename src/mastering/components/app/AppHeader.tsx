@@ -1,4 +1,5 @@
 import { AudioWaveform, CircleHelp, Download, FileText, Home, Pause, Play, Square, Upload } from "lucide-react";
+import { audioEngine } from "@/mastering/audio/engine/audioEngine";
 import type { ChangeEvent } from "react";
 import HoverInfo from "@/mastering/components/ui/HoverInfo";
 import type { MasteringTargetProfile, PlatformId } from "@/mastering/types/mastering";
@@ -111,6 +112,9 @@ export default function AppHeader({
             <HoverInfo text="Return to the Master Audio landing page.">
               <a
                 href="/"
+                onClick={() => {
+                  audioEngine.stop();
+                }}
                 className="flex h-full min-h-[56px] w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-zinc-100 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.9)] transition hover:border-cyan-200/40 hover:bg-white/[0.1]"
                 aria-label="Back to home"
               >
