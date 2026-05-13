@@ -8,9 +8,17 @@ import CompressorCard from '@/stemmix/components/effects/Compressor/CompressorCa
 import LimiterCard from '@/stemmix/components/effects/Limiter/LimiterCard'
 import ReverbCard from '@/stemmix/components/effects/Reverb/ReverbCard'
 
-import { stems } from '@/stemmix/data/stems'
+import { getStemsForMode } from '@/stemmix/data/stems'
+import { useAudioStore } from '@/stemmix/stores/useAudioStore'
 
 export default function StudioPage() {
+    const stemMode =
+        useAudioStore(
+            (state) => state.stemMode,
+        )
+    const visibleStems =
+        getStemsForMode(stemMode)
+
     return (
         <div className="min-h-screen bg-[#050816] text-white">
             <Header />
@@ -62,7 +70,7 @@ export default function StudioPage() {
                         </div>
 
                         <div className="space-y-3">
-                            {stems.map((stem) => (
+                            {visibleStems.map((stem) => (
                                 <StemRow
                                     key={stem.id}
                                     stem={stem}

@@ -10,19 +10,18 @@ mkdir -p "$TARGET_DIR"
 
 if [ -s "$OUT_FILE" ]; then
     echo "Asset already exists: $OUT_FILE"
-    exit 0
+else
+    echo "Downloading StemMix model to $OUT_FILE..."
+    curl -L "$FILE_URL" -o "$OUT_FILE"
+
+    MIN_BYTES=100000000
+    FILE_SIZE=$(wc -c < "$OUT_FILE" | tr -d ' ')
+
+    if [ ! -s "$OUT_FILE" ] || [ "$FILE_SIZE" -lt "$MIN_BYTES" ]; then
+        echo "Download failed or produced an invalid model file."
+        rm -f "$OUT_FILE"
+        exit 1
+    fi
+
+    echo "Download complete: $OUT_FILE"
 fi
-
-echo "Downloading StemMix model to $OUT_FILE..."
-curl -L "$FILE_URL" -o "$OUT_FILE"
-
-MIN_BYTES=100000000
-FILE_SIZE=$(wc -c < "$OUT_FILE" | tr -d ' ')
-
-if [ ! -s "$OUT_FILE" ] || [ "$FILE_SIZE" -lt "$MIN_BYTES" ]; then
-    echo "Download failed or produced an invalid model file."
-    rm -f "$OUT_FILE"
-    exit 1
-fi
-
-echo "Download complete."

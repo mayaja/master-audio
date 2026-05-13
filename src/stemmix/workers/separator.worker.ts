@@ -27,15 +27,23 @@ type DemucsProgress = {
     totalSegments: number
 }
 
+type StemMode =
+    | '2stem'
+    | '4stem'
+
 type SeparateMessage = {
     type: 'SEPARATE'
+    stemMode?: StemMode
     leftChannel: Float32Array<ArrayBuffer>
     rightChannel: Float32Array<ArrayBuffer>
 }
 
-type EngineMode = 'fast-webgpu' | 'stable-wasm'
+type EngineMode =
+    | 'fast-webgpu'
+    | 'stable-wasm'
 
-const MODEL_PATH = '/models/htdemucs_embedded.onnx'
+const MODEL_PATH =
+    '/models/htdemucs_embedded.onnx'
 const IS_LOCAL_HOST =
     [
         'localhost',
@@ -117,6 +125,39 @@ function postProgress(
     })
 }
 
+function mergeStems(
+    stems: Array<{
+        left: Float32Array
+        right: Float32Array
+    }>,
+) {
+    const length =
+        Math.max(
+            0,
+            ...stems.map((stem) =>
+                stem.left.length,
+            ),
+        )
+    const left =
+        new Float32Array(length)
+    const right =
+        new Float32Array(length)
+
+    stems.forEach((stem) => {
+        for (let i = 0; i < length; i++) {
+            left[i] +=
+                stem.left[i] || 0
+            right[i] +=
+                stem.right[i] || 0
+        }
+    })
+
+    return {
+        left,
+        right,
+    }
+}
+
 function createProcessor(
     mode: EngineMode,
 ) {
@@ -132,9 +173,7 @@ function createProcessor(
 
     return new Demucs.DemucsProcessor({
         ort,
-
         modelPath: MODEL_PATH,
-
         sessionOptions: {
             executionProviders,
             graphOptimizationLevel:
@@ -142,7 +181,6 @@ function createProcessor(
                     ? 'all'
                     : 'basic',
         },
-
         onProgress: (progress: DemucsProgress) => {
             const normalized =
                 clampProgress(
@@ -160,7 +198,6 @@ function createProcessor(
                 },
             )
         },
-
         onLog: () => {},
     })
 }
@@ -202,7 +239,6 @@ let processor = createProcessor(
         : 'fast-webgpu',
 )
 let loadedMode: EngineMode | null = null
-
 let loaded = false
 
 self.onmessage = async (
@@ -210,6 +246,7 @@ self.onmessage = async (
 ) => {
     const {
         type,
+        stemMode = '4stem',
         leftChannel,
         rightChannel,
     } = event.data
@@ -222,6 +259,7 @@ self.onmessage = async (
             leftChannel.length / 44100
 
         console.info('[StemMix Worker] Separation request', {
+            stemMode,
             samples:
                 leftChannel.length,
             estimatedDurationSeconds:
@@ -241,7 +279,8 @@ self.onmessage = async (
 
             console.time('[StemMix Worker] Demucs model load')
             console.info('[StemMix Worker] Loading Demucs model', {
-                modelPath: MODEL_PATH,
+                modelPath:
+                    MODEL_PATH,
                 executionProviders:
                     IS_SAFARI
                         ? [
@@ -289,7 +328,8 @@ self.onmessage = async (
                 processor = createProcessor('stable-wasm')
 
                 console.info('[StemMix Worker] Loading Demucs model with stable WASM', {
-                    modelPath: MODEL_PATH,
+                    modelPath:
+                        MODEL_PATH,
                     executionProviders: [
                         'wasm',
                     ],
@@ -306,7 +346,8 @@ self.onmessage = async (
 
             console.timeEnd('[StemMix Worker] Demucs model load')
             console.info('[StemMix Worker] Demucs model loaded successfully', {
-                mode: loadedMode,
+                mode:
+                    loadedMode,
             })
 
             loaded = true
@@ -332,11 +373,25 @@ self.onmessage = async (
                 leftChannel,
                 rightChannel,
             )
+        const stems =
+            stemMode === '2stem'
+                ? {
+                    vocals:
+                        result.vocals,
+                    instrumental:
+                        mergeStems([
+                            result.drums,
+                            result.bass,
+                            result.other,
+                        ]),
+                }
+                : result
 
         console.timeEnd('[StemMix Worker] Stem separation inference')
         console.info('[StemMix Worker] Separation completed', {
             mode:
                 loadedMode,
+            stemMode,
         })
 
         postProgress(
@@ -346,7 +401,8 @@ self.onmessage = async (
 
         self.postMessage({
             type: 'SEPARATION_SUCCESS',
-            stems: result,
+            stemMode,
+            stems,
         })
     } catch (err) {
         console.error('[StemMix Worker] Separation failed', err)

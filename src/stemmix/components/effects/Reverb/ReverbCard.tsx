@@ -1,4 +1,4 @@
-import { stems } from '@/stemmix/data/stems'
+import { getStemsForMode } from '@/stemmix/data/stems'
 import Tooltip from '@/stemmix/components/ui/Tooltip'
 import { mixerEngine } from '@/stemmix/features/audio/mixer'
 import {
@@ -97,6 +97,12 @@ export default function ReverbCard() {
             (state) =>
                 state.selectedReverbTrackId,
         )
+    const stemMode =
+        useAudioStore(
+            (state) => state.stemMode,
+        )
+    const visibleStems =
+        getStemsForMode(stemMode)
 
     const reverb =
         useAudioStore(
@@ -123,9 +129,9 @@ export default function ReverbCard() {
         )
 
     const selectedStem =
-        stems.find(
+        visibleStems.find(
             (stem) => stem.id === selectedTrackId,
-        ) ?? stems[0]
+        ) ?? visibleStems[0]
 
     const controlsDisabled =
         !isSeparated
@@ -181,7 +187,7 @@ export default function ReverbCard() {
             </div>
 
             <div className="mb-4 flex items-center gap-1.5 overflow-visible">
-                {stems.map((stem) => {
+                {visibleStems.map((stem) => {
                     const active =
                         stem.id === selectedTrackId
 

@@ -5,24 +5,23 @@ import type {
     TrackEq,
     TrackReverb,
 } from '@/stemmix/stores/useAudioStore'
+import {
+    type StemMode,
+    stemIdsByMode,
+} from '@/stemmix/data/stems'
 
 type StemBuffers = {
     vocals: AudioBuffer | null
+    instrumental: AudioBuffer | null
     drums: AudioBuffer | null
     bass: AudioBuffer | null
     other: AudioBuffer | null
 }
 
-const requiredStemIds: Array<keyof StemBuffers> = [
-    'vocals',
-    'drums',
-    'bass',
-    'other',
-]
-
 type ExportMixOptions = {
     audioBuffer: AudioBuffer
     stemBuffers: StemBuffers
+    stemMode: StemMode
     tracks: Track[]
     trackEq: Record<string, TrackEq>
     trackCompressor: Record<string, TrackCompressor>
@@ -277,6 +276,7 @@ export function encodeWav(buffer: AudioBuffer) {
 export async function renderStemMix({
     audioBuffer,
     stemBuffers,
+    stemMode,
     tracks,
     trackEq,
     trackCompressor,
@@ -284,7 +284,7 @@ export async function renderStemMix({
     masterLimiter,
     onProgress,
 }: ExportMixOptions) {
-    if (!hasCompleteStemSet(stemBuffers)) {
+    if (!hasCompleteStemSet(stemBuffers, stemMode)) {
         throw new Error(
             'Cannot export before all stems are ready.',
         )
@@ -310,7 +310,14 @@ export async function renderStemMix({
         ),
         sampleRate,
     )
-    const hasSolo = tracks.some(
+    const activeStemIds =
+        stemIdsByMode[stemMode]
+    const activeTracks =
+        tracks.filter((track) =>
+            activeStemIds.includes(track.id),
+        )
+
+    const hasSolo = activeTracks.some(
         (track) => track.solo,
     )
     const masterGain = context.createGain()
@@ -338,7 +345,7 @@ export async function renderStemMix({
     limiter.connect(limiterOutput)
     limiterOutput.connect(context.destination)
 
-    tracks.forEach((track, index) => {
+    activeTracks.forEach((track, index) => {
         const stem =
             stemBuffers[
             track.id as keyof StemBuffers
@@ -506,8 +513,9 @@ export function getExportFileName(
 
 export function hasCompleteStemSet(
     stemBuffers: StemBuffers,
+    stemMode: StemMode = '4stem',
 ) {
-    return requiredStemIds.every(
-        (id) => stemBuffers[id],
+    return stemIdsByMode[stemMode].every(
+        (id) => stemBuffers[id as keyof StemBuffers],
     )
 }

@@ -4,7 +4,7 @@ import {
     useAudioStore,
     type TrackEq,
 } from '@/stemmix/stores/useAudioStore'
-import { stems } from '@/stemmix/data/stems'
+import { getStemsForMode } from '@/stemmix/data/stems'
 
 const EQ_MIN = -12
 const EQ_MAX = 12
@@ -58,6 +58,12 @@ export default function EQCard() {
         useAudioStore(
             (state) => state.selectedEqTrackId,
         )
+    const stemMode =
+        useAudioStore(
+            (state) => state.stemMode,
+        )
+    const visibleStems =
+        getStemsForMode(stemMode)
 
     const eq =
         useAudioStore(
@@ -85,9 +91,9 @@ export default function EQCard() {
         )
 
     const selectedStem =
-        stems.find(
+        visibleStems.find(
             (stem) => stem.id === selectedTrackId,
-        ) ?? stems[0]
+        ) ?? visibleStems[0]
 
     const controlsDisabled =
         !isSeparated
@@ -163,7 +169,7 @@ export default function EQCard() {
             </div>
 
             <div className="mb-4 flex items-center gap-1.5 overflow-visible">
-                {stems.map((stem) => {
+                {visibleStems.map((stem) => {
                     const active =
                         stem.id === selectedTrackId
 
