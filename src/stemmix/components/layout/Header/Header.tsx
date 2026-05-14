@@ -809,7 +809,7 @@ export default function Header() {
                                     ].join(' ')}
                                 />
                                 <span>
-                                    StemMix Studio
+                                    Split Stems
                                 </span>
                             </div>
                         </div>
