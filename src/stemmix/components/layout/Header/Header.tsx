@@ -9,6 +9,11 @@ import {
 import {
     generateWaveform,
 } from '@/stemmix/utils/waveform'
+import {
+    getStemsForMode,
+    stemModeOptions,
+    type StemMode,
+} from '@/stemmix/data/stems'
 
 import {
     useRef,
@@ -38,6 +43,7 @@ import {
 
 type StemKey =
     | 'vocals'
+    | 'instrumental'
     | 'drums'
     | 'bass'
     | 'other'
@@ -112,9 +118,11 @@ export default function Header() {
 
         currentTime,
         duration,
+        stemMode,
 
         setAudioFile,
         setAudioBuffer,
+        setStemMode,
 
         setIsPlaying,
         setCurrentTime,
@@ -184,6 +192,11 @@ export default function Header() {
             return
         }
 
+        if (stemMode === '2stem') {
+            mixerEngine.stopAll()
+            setIsPlaying(false)
+        }
+
         // UI LOCK
         setSeparating(true)
 
@@ -242,6 +255,7 @@ export default function Header() {
         separatorWorker.postMessage(
             {
                 type: 'SEPARATE',
+                stemMode,
                 leftChannel,
                 rightChannel,
             },
@@ -274,6 +288,7 @@ export default function Header() {
 
         setStemBuffers({
             vocals: null,
+            instrumental: null,
             drums: null,
             bass: null,
             other: null,
@@ -281,6 +296,7 @@ export default function Header() {
 
         setWaveforms({
             vocals: [],
+            instrumental: [],
             drums: [],
             bass: [],
             other: [],
@@ -368,6 +384,10 @@ export default function Header() {
 
         const tracks =
             useAudioStore.getState().tracks
+        const activeStemIds =
+            getStemsForMode(
+                useAudioStore.getState().stemMode,
+            ).map((stem) => stem.id)
 
         const {
             stemBuffers,
@@ -403,7 +423,11 @@ export default function Header() {
 
         // AFTER SEPARATION
         if (hasSeparated) {
-            tracks.forEach((track) => {
+            tracks
+                .filter((track) =>
+                    activeStemIds.includes(track.id),
+                )
+                .forEach((track) => {
                 const stem =
                     stemBuffers[
                     track.id as keyof typeof stemBuffers
@@ -495,7 +519,7 @@ export default function Header() {
         const state =
             useAudioStore.getState()
 
-        if (!hasCompleteStemSet(state.stemBuffers)) {
+        if (!hasCompleteStemSet(state.stemBuffers, state.stemMode)) {
             setIsExporting(true)
             setExportProgress(0)
             setExportStatus(
@@ -528,6 +552,7 @@ export default function Header() {
             const blob = await renderStemMix({
                 audioBuffer,
                 stemBuffers: state.stemBuffers,
+                stemMode: state.stemMode,
                 tracks: state.tracks,
                 trackEq: state.trackEq,
                 trackCompressor:
@@ -667,15 +692,28 @@ export default function Header() {
                 if (!audioBuffer) return
 
                 // Mapping stems secara dinamis untuk menghindari kesalahan penulisan key
-                const stemKeys: StemKey[] = ['vocals', 'drums', 'bass', 'other']
+                const activeStemMode =
+                    useAudioStore.getState().stemMode
+
+                if (activeStemMode === '2stem') {
+                    mixerEngine.stopAll()
+                    setIsPlaying(false)
+                }
+
+                const stemKeys =
+                    getStemsForMode(activeStemMode).map(
+                        (stem) => stem.id as StemKey,
+                    )
                 const newBuffers: Record<StemKey, AudioBuffer | null> = {
                     vocals: null,
+                    instrumental: null,
                     drums: null,
                     bass: null,
                     other: null,
                 }
                 const newWaveforms: Record<StemKey, number[]> = {
                     vocals: [],
+                    instrumental: [],
                     drums: [],
                     bass: [],
                     other: [],
@@ -736,12 +774,13 @@ export default function Header() {
         setSeparating,
         setSeparationProgress,
         setSeparationStatus,
+        stemMode,
     ])
 
     const canExport =
         Boolean(audioBuffer) &&
         isSeparated &&
-        hasCompleteStemSet(stemBuffers) &&
+        hasCompleteStemSet(stemBuffers, stemMode) &&
         !isSeparating &&
         !isExporting
 
@@ -770,7 +809,7 @@ export default function Header() {
                                     ].join(' ')}
                                 />
                                 <span>
-                                    StemMix Studio
+                                    Split Stems
                                 </span>
                             </div>
                         </div>
@@ -844,13 +883,21 @@ export default function Header() {
                             side="bottom"
                         >
                             <Button
+                                disabled={isSeparating || isExporting}
                                 onClick={() => {
+                                    if (isSeparating || isExporting) return
+
                                     if (fileInputRef.current) {
                                         fileInputRef.current.value = ''
                                         fileInputRef.current.click()
                                     }
                                 }}
-                                className="inline-flex h-11 items-center gap-2 rounded-xl px-4"
+                                className={[
+                                    'inline-flex h-11 items-center gap-2 rounded-xl px-4',
+                                    isSeparating || isExporting
+                                        ? 'cursor-not-allowed opacity-45'
+                                        : '',
+                                ].join(' ')}
                             >
                                 <Upload size={15} />
                                 Upload
@@ -879,9 +926,54 @@ export default function Header() {
                         </Tooltip>
 
                         <Tooltip
+                            content="Choose the separation mode. 2 Channel keeps vocals and merges drums, bass, and other into instrumental; 4 Channel keeps all stems separate. Changing this resets the current stem split."
+                            side="bottom"
+                        >
+                            <label className="relative flex h-11 items-center rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 transition-all hover:border-cyan-300/20 hover:bg-cyan-300/[0.06]">
+                                <span className="mr-2 text-[9px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                                    Mode
+                                </span>
+
+                                <select
+                                    value={stemMode}
+                                    disabled={!audioBuffer || isSeparating}
+                                    onChange={(event) => {
+                                        const nextMode =
+                                            event.currentTarget.value as StemMode
+
+                                        if (nextMode === stemMode) return
+
+                                        mixerEngine.stopAll()
+                                        setIsPlaying(false)
+                                        setCurrentTime(0)
+                                        setStemMode(nextMode)
+                                    }}
+                                    className="h-full cursor-pointer appearance-none bg-transparent pr-7 text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-100 outline-none disabled:cursor-not-allowed disabled:opacity-45"
+                                    aria-label="Stem separation mode"
+                                >
+                                    {stemModeOptions.map((option) => (
+                                        <option
+                                            key={option.id}
+                                            value={option.id}
+                                            className="bg-[#0b1020] text-zinc-100"
+                                        >
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <span className="pointer-events-none absolute right-3 text-[10px] text-zinc-500">
+                                    ▾
+                                </span>
+                            </label>
+                        </Tooltip>
+
+                        <Tooltip
                             content={isSafariBrowser
                                 ? 'Stem splitting is disabled in Safari because Safari may reload the tab during heavy local AI processing. Please use Chrome or Edge.'
-                                : 'Split the audio into vocals, drums, bass, and other stems.'}
+                                : stemMode === '2stem'
+                                    ? 'Split with Demucs, then keep vocals and merge drums, bass, and other into instrumental.'
+                                    : 'Split the audio into vocals, drums, bass, and other stems.'}
                             side="bottom"
                         >
                             <Button

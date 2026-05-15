@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { StemMode } from '@/stemmix/data/stems'
 
 export type Track = {
     id: string
@@ -43,6 +44,8 @@ export type TrackReverb = {
 }
 
 type AudioStore = {
+    stemMode: StemMode
+
     audioFile: File | null
     audioBuffer: AudioBuffer | null
 
@@ -69,6 +72,7 @@ type AudioStore = {
 
     stemBuffers: {
         vocals: AudioBuffer | null
+        instrumental: AudioBuffer | null
         drums: AudioBuffer | null
         bass: AudioBuffer | null
         other: AudioBuffer | null
@@ -76,6 +80,7 @@ type AudioStore = {
 
     waveforms: {
         vocals: number[]
+        instrumental: number[]
         drums: number[]
         bass: number[]
         other: number[]
@@ -126,6 +131,11 @@ type AudioStore = {
     ) => void
 
     setAudioFile: (file: File | null) => void
+
+    setStemMode: (
+        mode: StemMode,
+    ) => void
+
     setAudioBuffer: (
         buffer: AudioBuffer | null,
     ) => void
@@ -159,6 +169,7 @@ type AudioStore = {
     setStemBuffers: (
         stems: {
             vocals: AudioBuffer | null
+            instrumental: AudioBuffer | null
             drums: AudioBuffer | null
             bass: AudioBuffer | null
             other: AudioBuffer | null
@@ -168,6 +179,7 @@ type AudioStore = {
     setWaveforms: (
         waveforms: {
             vocals: number[]
+            instrumental: number[]
             drums: number[]
             bass: number[]
             other: number[]
@@ -195,6 +207,16 @@ const defaultTracks: Track[] = [
     {
         id: 'vocals',
         name: 'Vocals',
+        volume: 1,
+        pan: 0,
+        mute: false,
+        solo: false,
+        fxEnabled: false,
+    },
+
+    {
+        id: 'instrumental',
+        name: 'Instrumental',
         volume: 1,
         pan: 0,
         mute: false,
@@ -239,6 +261,11 @@ const defaultTrackEq: Record<string, TrackEq> = {
         mid: 0,
         high: 0,
     },
+    instrumental: {
+        low: 0,
+        mid: 0,
+        high: 0,
+    },
     drums: {
         low: 0,
         mid: 0,
@@ -266,6 +293,7 @@ const defaultCompressor: TrackCompressor = {
 
 const defaultTrackCompressor: Record<string, TrackCompressor> = {
     vocals: defaultCompressor,
+    instrumental: defaultCompressor,
     drums: defaultCompressor,
     bass: defaultCompressor,
     other: defaultCompressor,
@@ -282,6 +310,7 @@ const defaultReverb: TrackReverb = {
 
 const defaultTrackReverb: Record<string, TrackReverb> = {
     vocals: defaultReverb,
+    instrumental: defaultReverb,
     drums: defaultReverb,
     bass: defaultReverb,
     other: defaultReverb,
@@ -296,6 +325,8 @@ const defaultMasterLimiter: MasterLimiter = {
 
 export const useAudioStore =
     create<AudioStore>((set) => ({
+        stemMode: '4stem',
+
         isSeparated: false,
         audioFile: null,
         audioBuffer: null,
@@ -444,6 +475,7 @@ export const useAudioStore =
             }),
         stemBuffers: {
             vocals: null,
+            instrumental: null,
             drums: null,
             bass: null,
             other: null,
@@ -451,6 +483,7 @@ export const useAudioStore =
 
         waveforms: {
             vocals: [],
+            instrumental: [],
             drums: [],
             bass: [],
             other: [],
@@ -470,6 +503,38 @@ export const useAudioStore =
             set({
                 audioFile: file,
             }),
+
+        setStemMode: (mode) =>
+            set((state) => ({
+                stemMode: mode,
+                tracks: state.tracks.map((track) => ({
+                    ...track,
+                    mute: false,
+                    solo: false,
+                })),
+                isSeparated: false,
+                isSeparating: false,
+                selectedEqTrackId: 'vocals',
+                selectedCompressorTrackId: 'vocals',
+                selectedReverbTrackId: 'vocals',
+                stemBuffers: {
+                    vocals: null,
+                    instrumental: null,
+                    drums: null,
+                    bass: null,
+                    other: null,
+                },
+                waveforms: {
+                    vocals: [],
+                    instrumental: [],
+                    drums: [],
+                    bass: [],
+                    other: [],
+                },
+                separationProgress: 0,
+                separationStatus:
+                    'Stem mode changed. Ready to split stems.',
+            })),
 
         setAudioBuffer: (buffer) =>
             set({
